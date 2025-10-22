@@ -28,6 +28,7 @@ Startup
 Install Node (v20.19) and git
 Checkout using "git clone git@github.com:darrellvermaak/RBCodeChallenge.git"
 Change into the RBCodeChallenge directory and execute "npm i"
-Create a robot instruction file as per the specifications and save it in a file in dist/instructions/instructions.txt
-Compile the app using "npm run build"
-Run the app using "npm run start" 
+Create a robot instruction file as per the specifications and save it in a file in src/instructions.txt - it will be copied at compile time to dist/instructions/instructions.txt overwriting existing files - alternatively edit the copy in dist/instructions between runs.  
+Compile the app using "npm run build"  
+Run the app using "npm run start"  
+Run the unit tests with "npm run test"  

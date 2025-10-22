@@ -7,14 +7,13 @@ export class MapGrid {
     constructor(line: string) {
         let gridArray = this.createArrayFromLine(line);
         this.validateAndSetCoordinates(gridArray);
-        console.log(`Map grid created with dimensions (${this.coordinates.x}, ${this.coordinates.y})`);
     }
 
     private createArrayFromLine(line: string): string[] {
         return line.trim().split(/\s+/); // Split by any amount of whitespaces - as per specification
     }
 
-    private validateAndSetCoordinates(gridArray: string[]) {
+    private validateAndSetCoordinates(gridArray: string[]): void {
         if (gridArray.length !== 2) {
             throw new Error('Invalid Robot Instruction File - first line must contain two space separated integers representing grid dimensions.');
         }

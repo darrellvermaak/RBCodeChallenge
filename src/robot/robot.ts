@@ -1,4 +1,5 @@
 import type { MapGrid } from "../map-grid/map-grid";
+import { MapGridCoordinates } from "../map-grid/map-grid.type";
 import type { ScentHash } from "../scent-hash/scent-hash.type";
 
 export class Robot {
@@ -13,7 +14,7 @@ export class Robot {
         this.initialiseState(line);
     }
 
-    public ProcessCommands(commands: string) {
+    public ProcessCommands(commands: string): void {
         for (let command of commands) {
             if (!this.commands.includes(command)) {
                 console.error(`Invalid command character: ${command}`);
@@ -30,16 +31,16 @@ export class Robot {
                     this.moveForward();
                     break;
             }
+            if (this.isLost) return;
         }
         if (!this.isLost) {
-            console.log(`Final Position: (${this.currentCoords.x}, ${this.currentCoords.y}) facing ${this.currentOrientation}`);
+            console.log(`${this.currentCoords.x} ${this.currentCoords.y} ${this.currentOrientation}`);
         }
     }
 
-    private initialiseState(line: string) {
+    private initialiseState(line: string): void {
         let robotArray = this.validateLine(line);
         this.validateAndSetInitialState(robotArray);
-        console.log(`Robot initialized at (${this.currentCoords.x}, ${this.currentCoords.y}) facing ${this.currentOrientation}`);
     }
 
     private validateLine(line: string): string[] {
@@ -50,7 +51,7 @@ export class Robot {
         return robotArray;
     }
 
-    private validateAndSetInitialState(robotArray: string[]):void {
+    private validateAndSetInitialState(robotArray: string[]): void {
         let x = parseInt(robotArray[0]!, 10);
         let y = parseInt(robotArray[1]!, 10);
         if (!this.validateCoords(x, y)) {
@@ -60,18 +61,18 @@ export class Robot {
         this.validateAndSetCurrentOrientation(robotArray[2]!);
     }
 
-    private validateAndSetCurrentOrientation(orientation: string) {
+    private validateAndSetCurrentOrientation(orientation: string): void {
         if (!this.validateOrientation(orientation)) {
             throw new Error('Invalid initial orientation character.');
         }
         this.setCurrentOrientation(orientation);
     }
 
-    private setCurrentCoords(x: number, y: number) {
+    private setCurrentCoords(x: number, y: number): void {
         this.currentCoords = { x, y };
     }
 
-    private setCurrentOrientation(orientation: string) {
+    private setCurrentOrientation(orientation: string): void {
         this.currentOrientation = orientation;
     }
 
@@ -86,24 +87,20 @@ export class Robot {
         return this.orientationChars.includes(orientation);
     }
 
-    private turnLeft() {
+    private turnLeft(): void {
         let currentIndex = this.orientationChars.indexOf(this.currentOrientation);
         let newIndex = (currentIndex - 1 + this.orientationChars.length) % this.orientationChars.length;
         this.setCurrentOrientation(this.orientationChars[newIndex]!);
     }
 
-    private turnRight() {
+    private turnRight(): void {
         let currentIndex = this.orientationChars.indexOf(this.currentOrientation);
         let newIndex = (currentIndex + 1) % this.orientationChars.length;
         this.setCurrentOrientation(this.orientationChars[newIndex]!);
     }
 
-    private moveForward() {
-        // Check scent hash to see if we should ignore the move
-        if (this.isCoordsInScentHash(this.currentCoords.x, this.currentCoords.y, this.currentOrientation)) {
-            console.log(`Ignored move that would cause loss at (${this.currentCoords.x}, ${this.currentCoords.y}) facing ${this.currentOrientation} due to scent.`);
-            return;
-        }
+    private moveForward(): void {
+        if (this.isCoordsInScentHash(this.currentCoords.x, this.currentCoords.y, this.currentOrientation)) return;
         const newwCoords = { ...this.currentCoords };
         switch (this.currentOrientation) {
             case 'N':
@@ -122,19 +119,7 @@ export class Robot {
                 return;
         }
 
-        if (this.validateCoords(newwCoords.x, newwCoords.y)) {
-            this.setCurrentCoords(newwCoords.x, newwCoords.y);
-        } else {
-            // Robot is lost
-            this.isLost = true;
-            console.log(`Robot lost at (${this.currentCoords.x}, ${this.currentCoords.y}) facing ${this.currentOrientation}`);
-            // Add to scent hash
-            const key = `${this.currentCoords.x}:${this.currentCoords.y}`;
-            if (!this.scentHash[key]) {
-                this.scentHash[key] = '';
-            }
-            this.scentHash[key] += this.currentOrientation;
-        }
+        this.validateNewAndSetCurrentCoords(newwCoords);
     }
 
     private isCoordsInScentHash(x: number, y: number, orientation: string): boolean {
@@ -144,5 +129,27 @@ export class Robot {
             return orientations!.includes(orientation);
         }
         return false;
+    }
+
+    private validateNewAndSetCurrentCoords(newwCoords: MapGridCoordinates): void {
+        if (this.validateCoords(newwCoords.x, newwCoords.y)) {
+            this.setCurrentCoords(newwCoords.x, newwCoords.y);
+        } else {
+            this.reportRobotLost();
+        }
+    }
+
+    private reportRobotLost(): void {
+        this.isLost = true;
+        console.log(`${this.currentCoords.x} ${this.currentCoords.y} ${this.currentOrientation} LOST`);
+        this.updateScentHash();
+    }
+
+    private updateScentHash(): void {
+        const key = `${this.currentCoords.x}:${this.currentCoords.y}`;
+        if (!this.scentHash[key]) {
+            this.scentHash[key] = '';
+        }
+        this.scentHash[key] += this.currentOrientation;
     }
 }

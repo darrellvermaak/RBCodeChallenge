@@ -25,26 +25,23 @@ const rl = createInterface({
 });
 
 rl.on('line', (line) => {
-  if (!line.trim()) return; // Skip empty lines
+  if (!line.trim()) return;
   if (!mapGrid) {
     mapGrid = new MapGrid(line);
     return;
   }
   if (!robot) {
     robot = new Robot(line, mapGrid, scentHash);
-    console.log(`Line: ${line}`);
     return;
   }
   robot.ProcessCommands(line.trim());
   robot = undefined;
-  console.log(`Line: ${line}`);
 });
 
 rl.on('close', () => {
-  console.log('Finished reading the file.');
-  fileStream.destroy(); // Explicitly close the file stream
+  fileStream.destroy();
 });
 
 fileStream.on('close', () => {
-  console.log('File stream closed.');
+  console.log('');
 });
