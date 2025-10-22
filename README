@@ -25,9 +25,9 @@ Startup
                         set the robot orientation
 
 ## Instructions for use:
-Install Node and git
+Install Node (v20.19) and git
 Checkout using "git clone git@github.com:darrellvermaak/RBCodeChallenge.git"
 Change into the RBCodeChallenge directory and execute "npm i"
-Create a robot instruction file as per the specifications and save it in a file in dist/instructions/instruction.txt
+Create a robot instruction file as per the specifications and save it in a file in dist/instructions/instructions.txt
 Compile the app using "npm run build"
 Run the app using "npm run start" 
