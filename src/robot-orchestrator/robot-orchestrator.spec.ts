@@ -60,6 +60,10 @@ describe('RobotOrchestrator', () => {
         expect((orchestrator as any).mapGrid).to.be.null;
         expect((orchestrator as any).currentRobot).to.be.null;
         expect((orchestrator as any).scentHash).to.deep.equal({});
-        expect((orchestrator as any).results).to.deep.equal([]);
+    });
+
+    it('should throw an error for lines exceeding maximum length', () => {
+        const longLine = 'A'.repeat(101); // 101 characters
+        expect(() => orchestrator.ProcessLine(longLine)).to.throw('Line exceeds maximum length of 100 characters.');
     });
 });

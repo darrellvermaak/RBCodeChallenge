@@ -6,7 +6,6 @@ export class RobotOrchestrator {
   private mapGrid: MapGrid | null = null;
   private scentHash: ScentHash;
   private currentRobot: Robot | null = null;
-  private results: string[] = [];
 
   constructor() {
     this.scentHash = {};
@@ -14,7 +13,7 @@ export class RobotOrchestrator {
 
   public ProcessLine(line: string): void {
     if (!line.trim()) return; // Skip empty lines
-
+    if (line.trim().length > 100) throw new Error('Line exceeds maximum length of 100 characters.');
     try {
       if (!this.mapGrid) {
         this.mapGrid = new MapGrid(line);
@@ -30,7 +29,7 @@ export class RobotOrchestrator {
       this.currentRobot = null; // Reset for the next robot
     } catch (error) {
       console.error(`Error processing line "${line}":`, (error as Error).message);
-      this.results.push(`Error on line "${line}": ${(error as Error).message}`);
+      throw new Error(`Processing failed for line: ${line}`);
     }
   }
 
@@ -41,6 +40,5 @@ export class RobotOrchestrator {
     this.mapGrid = null;
     this.scentHash = {};
     this.currentRobot = null;
-    this.results = [];
   }
 }
