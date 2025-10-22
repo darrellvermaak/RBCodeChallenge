@@ -2,39 +2,51 @@ import type { MapGrid } from "../map-grid/map-grid";
 import { MapGridCoordinates } from "../map-grid/map-grid.type";
 import type { ScentHash } from "../scent-hash/scent-hash.type";
 
-export class Robot {
-    private currentCoords!: { x: number; y: number };
-    private currentOrientation!: string;
-    private isLost: boolean = false;
+enum Orientation {
+  North = 'N',
+  East = 'E',
+  South = 'S',
+  West = 'W',
+}
 
-    private orientationChars = ['N', 'E', 'S', 'W'];
-    private commands = ['L', 'R', 'F']; // this could be an enum but keeping simple for now - both methods are extendable for future commands
+enum Command {
+  Left = 'L',
+  Right = 'R',
+  Forward = 'F',
+}
+
+export class Robot {
+    private currentCoords: MapGridCoordinates | null = null;
+    private currentOrientation: Orientation | null = null;
+    private isLost: boolean = false;
+    private readonly validCommands = new Set(Object.values(Command));
+    private readonly validOrientations = new Set(Object.values(Orientation));
 
     constructor(line: string, private mapGrid: MapGrid, private scentHash: ScentHash) {
         this.initialiseState(line);
     }
 
     public ProcessCommands(commands: string): void {
-        for (let command of commands) {
-            if (!this.commands.includes(command)) {
+        for (const command of commands) {
+            if (!this.validCommands.has(command as Command)) {
                 console.error(`Invalid command character: ${command}`);
                 throw new Error(`Invalid command character ${command}.`);;
             }
-            switch (command) {
-                case 'L':
+            switch (command as Command) {
+                case Command.Left:
                     this.turnLeft();
                     break;
-                case 'R':
+                case Command.Right:
                     this.turnRight();
                     break;
-                case 'F':
+                case Command.Forward:
                     this.moveForward();
                     break;
             }
             if (this.isLost) return;
         }
         if (!this.isLost) {
-            console.log(`${this.currentCoords.x} ${this.currentCoords.y} ${this.currentOrientation}`);
+            console.log(`${this.currentCoords!.x} ${this.currentCoords!.y} ${this.currentOrientation}`);
         }
     }
 
@@ -73,7 +85,7 @@ export class Robot {
     }
 
     private setCurrentOrientation(orientation: string): void {
-        this.currentOrientation = orientation;
+        this.currentOrientation = orientation as Orientation;
     }
 
     private validateCoords(x: number, y: number): boolean {
@@ -84,42 +96,45 @@ export class Robot {
     }
 
     private validateOrientation(orientation: string): boolean {
-        return this.orientationChars.includes(orientation);
+        return this.validOrientations.has(orientation as Orientation);
     }
 
     private turnLeft(): void {
-        let currentIndex = this.orientationChars.indexOf(this.currentOrientation);
-        let newIndex = (currentIndex - 1 + this.orientationChars.length) % this.orientationChars.length;
-        this.setCurrentOrientation(this.orientationChars[newIndex]!);
+        if (!this.currentOrientation) return;
+        let currentIndex = Object.values(Orientation).indexOf(this.currentOrientation);
+        let newIndex = (currentIndex - 1 + this.validOrientations.size) % this.validOrientations.size;
+        this.currentOrientation = Object.values(Orientation)[newIndex];
     }
 
     private turnRight(): void {
-        let currentIndex = this.orientationChars.indexOf(this.currentOrientation);
-        let newIndex = (currentIndex + 1) % this.orientationChars.length;
-        this.setCurrentOrientation(this.orientationChars[newIndex]!);
+        if (!this.currentOrientation) return;
+        let currentIndex = Object.values(Orientation).indexOf(this.currentOrientation);
+        let newIndex = (currentIndex + 1) % this.validOrientations.size;
+        this.currentOrientation = Object.values(Orientation)[newIndex];
     }
 
     private moveForward(): void {
+        if (!this.currentCoords || !this.currentOrientation || this.isLost) return;
         if (this.isCoordsInScentHash(this.currentCoords.x, this.currentCoords.y, this.currentOrientation)) return;
-        const newwCoords = { ...this.currentCoords };
+        const newCoords = { ...this.currentCoords };
         switch (this.currentOrientation) {
-            case 'N':
-                newwCoords.y += 1;
+            case Orientation.North:
+                newCoords.y += 1;
                 break;
-            case 'E':
-                newwCoords.x += 1;
+            case Orientation.East:
+                newCoords.x += 1;
                 break;
-            case 'S':
-                newwCoords.y -= 1;
+            case Orientation.South:
+                newCoords.y -= 1;
                 break;
-            case 'W':
-                newwCoords.x -= 1;
+            case Orientation.West:
+                newCoords.x -= 1;
                 break;
             default:
                 return;
         }
 
-        this.validateNewAndSetCurrentCoords(newwCoords);
+        this.validateAndUpdateCoords(newCoords);
     }
 
     private isCoordsInScentHash(x: number, y: number, orientation: string): boolean {
@@ -131,21 +146,23 @@ export class Robot {
         return false;
     }
 
-    private validateNewAndSetCurrentCoords(newwCoords: MapGridCoordinates): void {
-        if (this.validateCoords(newwCoords.x, newwCoords.y)) {
-            this.setCurrentCoords(newwCoords.x, newwCoords.y);
+    private validateAndUpdateCoords(newCoords: MapGridCoordinates): void {
+        if (this.validateCoords(newCoords.x, newCoords.y)) {
+            this.setCurrentCoords(newCoords.x, newCoords.y);
         } else {
             this.reportRobotLost();
         }
     }
 
     private reportRobotLost(): void {
+        if (!this.currentCoords || !this.currentOrientation) return;
         this.isLost = true;
         console.log(`${this.currentCoords.x} ${this.currentCoords.y} ${this.currentOrientation} LOST`);
         this.updateScentHash();
     }
 
     private updateScentHash(): void {
+        if (!this.currentCoords || !this.currentOrientation) return;
         const key = `${this.currentCoords.x}:${this.currentCoords.y}`;
         if (!this.scentHash[key]) {
             this.scentHash[key] = '';
