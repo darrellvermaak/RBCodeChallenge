@@ -1,47 +1,43 @@
-import { createReadStream } from 'fs';
-import { createInterface } from 'readline';
-import { join } from 'path';
+import { createReadStream } from "node:fs";
+import { RobotOrchestrator } from "./robot-orchestrator/robot-orchestrator";
+import { createInterface } from "node:readline";
+import { join } from "node:path";
 
-import { MapGrid } from './map-grid/map-grid';
-import { Robot } from './robot/robot';
-import type { ScentHash } from './scent-hash/scent-hash.type';
+async function processInstructionsFile(filePath: string): Promise<string[]> {
+  const orchestrator = new RobotOrchestrator();
+  const fileStream = createReadStream(filePath);
 
-let mapGrid: MapGrid | undefined;
-let scentHash: ScentHash = {}
-let robot: Robot | undefined;
+  return new Promise((resolve, reject) => {
+    fileStream.on('error', (error) => {
+      console.error('Error opening file:', error.message);
+      fileStream.destroy();
+      reject(error);
+    });
 
-const filePath = join(__dirname, 'instructions', 'instructions.txt');
+    const rl = createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
 
-const fileStream = createReadStream(filePath);
+    rl.on('line', (line) => {
+      orchestrator.ProcessLine(line);
+    });
 
-fileStream.on('error', (error) => {
-  console.error('Error opening file:', error.message);
-  process.exit(1);
-});
+    rl.on('close', () => {
+      fileStream.destroy();
+    });
+  });
+}
 
-const rl = createInterface({
-  input: fileStream,
-  crlfDelay: Infinity,
-});
-
-rl.on('line', (line) => {
-  if (!line.trim()) return;
-  if (!mapGrid) {
-    mapGrid = new MapGrid(line);
-    return;
+// Run the application
+async function main() {
+  const filePath = join(__dirname, 'instructions', 'instructions.txt');
+  try {
+    const results = await processInstructionsFile(filePath);
+  } catch (error) {
+    console.error('Failed to process instructions:', (error as Error).message);
+    process.exit(1);
   }
-  if (!robot) {
-    robot = new Robot(line, mapGrid, scentHash);
-    return;
-  }
-  robot.ProcessCommands(line.trim());
-  robot = undefined;
-});
+}
 
-rl.on('close', () => {
-  fileStream.destroy();
-});
-
-fileStream.on('close', () => {
-  console.log('');
-});
+main();
